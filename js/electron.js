@@ -61,7 +61,7 @@ class Sensor
         ctx.fillStyle = "#FFFF00";
         ctx.strokeStyle = "#FF0000";
 
-		// Draw vector arrow
+		// Draw vector line
 		let Vx = this.x;
 		let Vy = this.y;
 		for(const v of this.vec)
@@ -74,12 +74,26 @@ class Sensor
 		ctx.moveTo(this.x, this.y);
 		ctx.lineTo(Vx, Vy);
 		ctx.stroke();
+
 		//console.log('drawing line from (' + this.x + ',' + this.y + ') to (' + Vx + ', ' + this.y + ')');
+
+		
+		// Draw vector head
+		// Really proud of this
+		if(this.distance(Vx, Vy) > 3)
+		{
+			ctx.translate(Vx, Vy);
+			ctx.rotate( Math.atan2(Vy - this.y, Vx - this.x) + (Math.PI / 4));
+			ctx.strokeRect(-2, -2, 4, 4);
+		}
+
+
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 		// Draw Circle
 		ctx.beginPath();
         ctx.arc(this.x, this.y, SRAD, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.fill();	
     }
 
     distance(x, y)
@@ -94,7 +108,7 @@ class Sensor
         if(this.vec[index] == undefined) this.vec[index] = new Vector2();
 		let dist = this.distance(pList[index].x, pList[index].y) / DPI;
 		let magnitude = (pList[index].charge / (dist * dist));
-		
+
 		this.vec[index].x = ((pList[index].x - this.x) / dist) * magnitude;
 		this.vec[index].y = ((pList[index].y - this.y) / dist) * magnitude;
     }
@@ -117,10 +131,10 @@ function redraw()
 {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+	for(const s of sList)
+		s.draw();
     for(const p of pList)
         p.draw();
-    for(const s of sList)
-        s.draw();
 }
 
 function getClickElementIndex(x, y)
@@ -141,11 +155,16 @@ function createElectron(x, y, charge)
 
 function fillSensors()
 {
-	const origin = 20;
 	const between = 100;
-	for(let i = origin; i < canvas.width; i += between)
+
+	const originX = Math.trunc( (canvas.width - (Math.trunc(canvas.width / between) * between)) / 2 );
+	const originY = Math.trunc( (canvas.height - (Math.trunc(canvas.height / between) * between)) / 2 );
+
+console.log(originX);
+
+	for(let i = originX; i < canvas.width; i += between)
 	{
-		for(let j = origin; j < canvas.height; j += between)
+		for(let j = originY; j < canvas.height; j += between)
 		{
 			sList[sList.length] = new Sensor(i, j);
 		}
@@ -156,12 +175,14 @@ function fillSensors()
 
 function Resized()
 {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = canvas.offsetHeight;
+	canvas.height = canvas.offsetHeight;
+	redraw();
 }
 
 function MouseDown()
 {
+	console.log(event.x + ", " + event.y);
 	if(event.which == 2)
 	{
 		pList = [];
@@ -172,7 +193,7 @@ function MouseDown()
     dragging = getClickElementIndex(event.x, event.y);
 	if(dragging == undefined)
 	{
-		createElectron(event.x, event.y, event.which == 1 ? 1 : -1);
+		createElectron(event.x, event.y, event.which == 1 ? -1 : 1);
 	}
 }
 
@@ -201,9 +222,12 @@ canvas.addEventListener('contextmenu', (e) => {
     return false;
 })
 
-Resized();
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+
 const ctx = canvas.getContext('2d');
 ctx.lineWidth = 7;
+ctx.lineCap = 'round';
 ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
 //sList[sList.length] = new Sensor( canvas.width / 2, canvas.height / 2 - 100 );
