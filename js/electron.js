@@ -188,6 +188,7 @@ function MouseDown()
 		pList = [];
 		for(const s of sList)
 			s.clear();
+            redraw();
 		return;
 	}
     dragging = getClickElementIndex(event.x, event.y);
